@@ -48,12 +48,11 @@ RUN php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 # Remove Composer setup file
 RUN php -r "unlink('composer-setup.php');"
 
-# Remove Composer lock file
-RUN rm /var/www/html/composer.lock
+# Remove Composer lock file if it exists
+RUN rm -f /var/www/html/composer.lock
 
 # Update Composer (ignoring platform requirements)
-RUN composer update --ignore-platform-reqs --no-plugins --no-scripts --no-interaction
-
+RUN composer update --ignore-platform-reqs --no-plugins --no-scripts --no-interaction || true
 
 # Expose port 80 to the Docker host for PHP application
 EXPOSE 80
@@ -68,4 +67,4 @@ EXPOSE 50000
 USER www-data
 
 # Start the Apache server
-CMD ["apache2-foreground"]
+CMD ["apache2-foreground"]  
