@@ -34,7 +34,7 @@ RUN docker-php-ext-enable zip pdo pdo_mysql gd
 COPY . .
 
 # Set permissions
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+# RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
 # Remove Composer (if installed globally)
 RUN apt-get remove -y composer
