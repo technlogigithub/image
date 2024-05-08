@@ -22,8 +22,10 @@ RUN apt-get update && \
     wget -O /usr/share/keyrings/jenkins-keyring.asc https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key && \
     echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/ | tee /etc/apt/sources.list.d/jenkins.list > /dev/null && \
     apt-get update && \
-    apt-get install -y openjdk-11-jre jenkins
-    
+    apt-get install -y openjdk-11-jre jenkins && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 # Install PHP extensions
 RUN docker-php-ext-install zip pdo pdo_mysql gd
 
@@ -34,7 +36,8 @@ RUN docker-php-ext-enable zip pdo pdo_mysql gd
 COPY . .
 
 # Set permissions
-# RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html
 
 # Remove Composer (if installed globally)
 RUN apt-get remove -y composer
@@ -63,8 +66,5 @@ EXPOSE 8484
 # Expose port 50000 for Jenkins agent connections
 EXPOSE 50000
 
-# Switch back to the Apache user
-USER www-data
-
 # Start the Apache server
-CMD ["apache2-foreground"]  
+CMD ["apache2-foreground"]
