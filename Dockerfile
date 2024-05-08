@@ -39,23 +39,17 @@ COPY . .
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html
 
-# Remove Composer (if installed globally)
-RUN apt-get remove -y composer
-
-# Download Composer installer
-RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-
-# Run the Composer installer
-RUN php composer-setup.php --install-dir=/usr/local/bin --filename=composer
-
-# Remove Composer setup file
-RUN php -r "unlink('composer-setup.php');"
+# Remove Composer setup files
+RUN rm -f composer-setup.php
 
 # Remove Composer lock file if it exists
 RUN rm -f /var/www/html/composer.lock
 
 # Update Composer (ignoring platform requirements)
-RUN composer update --ignore-platform-reqs --no-plugins --no-scripts --no-interaction || true
+RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && \
+    php composer-setup.php --install-dir=/usr/local/bin --filename=composer && \
+    php -r "unlink('composer-setup.php');" && \
+    composer update --ignore-platform-reqs --no-plugins --no-scripts --no-interaction || true
 
 # Expose port 80 to the Docker host for PHP application
 EXPOSE 80
