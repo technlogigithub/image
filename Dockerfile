@@ -26,39 +26,53 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Set up MariaDB/MySQL root user and password
-RUN echo "CREATE USER 'root'@'localhost' IDENTIFIED BY 'root123';" > /root/db-setup.sql && \
-    echo "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' WITH GRANT OPTION;" >> /root/db-setup.sql && \
-    echo "FLUSH PRIVILEGES;" >> /root/db-setup.sql && \
-    mysqld --user=mysql --skip-networking --socket=/var/run/mysqld/mysqld.sock & \
-    sleep 5 && \
-    mysql -uroot < /root/db-setup.sql && \
-    rm /root/db-setup.sql
+# Change Jenkins port to 8484
+RUN sed -i 's/HTTP_PORT=8080/HTTP_PORT=8484/g' /etc/default/jenkins
 
-# Install PHP extensions
-RUN docker-php-ext-install zip pdo pdo_mysql gd
-
-# Enable installed PHP extensions
-RUN docker-php-ext-enable zip pdo pdo_mysql gd
+# Install PHP extensions and LAMP stack components
+RUN docker-php-ext-install zip pdo pdo_mysql gd && \
+    apt-get install -y \
+    apache2 \
+    mariadb-server \
+    php-mbstring php-xml php-mysql libapache2-mod-php7.4 && \
+    # Enable Apache modules
+    a2enmod rewrite && \
+    # Start Apache and MySQL services
+    service apache2 start && service mysql start && \
+    # Configure MySQL root password
+    echo "mysql-server mysql-server/root_password password doncen" | debconf-set-selections && \
+    echo "mysql-server mysql-server/root_password_again password doncen" | debconf-set-selections && \
+    apt-get install -y mysql-server && \
+    echo -e "n\nn\nn\nn\n" | mysql_secure_installation && \
+    # Install phpMyAdmin
+    cd /var/www/html/ && \
+    wget https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.tar.gz && \
+    mkdir phpMyAdmin && \
+    tar -xvzf phpMyAdmin-latest-all-languages.tar.gz -C phpMyAdmin --strip-components 1 && \
+    docker-php-ext-install zip pdo pdo_mysql gd && \
+    chown -R www-data:www-data /var/www/html/phpMyAdmin && \
+    chmod -R 755 /var/www/html/phpMyAdmin && \
+    rm -rf /var/www/html/*
 
 # Copy the rest of the application code
 COPY . .
 
 # Set permissions
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Remove Composer setup files
-RUN rm -f composer-setup.php
+# Remove Composer (if installed globally)
+RUN apt-get remove -y composer
 
-# Remove Composer lock file if it exists
-RUN rm -f /var/www/html/composer.lock
-
-# Update Composer (ignoring platform requirements)
+# Download and install Composer globally
 RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && \
     php composer-setup.php --install-dir=/usr/local/bin --filename=composer && \
-    php -r "unlink('composer-setup.php');" && \
-    composer update --ignore-platform-reqs --no-plugins --no-scripts --no-interaction || true
+    php -r "unlink('composer-setup.php');"
+
+# Remove Composer lock file
+RUN rm /var/www/html/composer.lock
+
+# Update Composer (ignoring platform requirements)
+RUN composer update --ignore-platform-reqs --no-plugins --no-scripts --no-interaction
 
 # Expose port 80 to the Docker host for PHP application
 EXPOSE 80
@@ -68,6 +82,9 @@ EXPOSE 8484
 
 # Expose port 50000 for Jenkins agent connections
 EXPOSE 50000
+
+# Switch back to the Apache user
+USER www-data
 
 # Restart all services
 RUN service apache2 restart && \
