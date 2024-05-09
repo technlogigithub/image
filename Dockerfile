@@ -3,7 +3,7 @@ FROM amazonlinux:latest
 # Update the system and install necessary packages
 RUN yum update -y && \
     yum install -y httpd \
-                   mariadb \
+                   mysql \
                    php \
                    php-mysqlnd \
                    php-mbstring \
@@ -13,8 +13,8 @@ RUN yum update -y && \
 # Start services
 RUN systemctl start httpd && \
     systemctl enable httpd && \
-    systemctl start mariadb && \
-    systemctl enable mariadb
+    systemctl start mysqld && \
+    systemctl enable mysqld
 
 # Set file permissions
 RUN usermod -a -G apache ec2-user && \
@@ -29,9 +29,9 @@ COPY phpinfo.php /var/www/html/
 # Remove PHP info file for security reasons
 RUN rm -f /var/www/html/phpinfo.php
 
-# Secure MariaDB
+# Secure MySQL
 # Note: The following steps may not be directly applicable in a Docker environment
-# You might need to manually secure the MariaDB instance after running the container
+# You might need to manually secure the MySQL instance after running the container
 # RUN mysql_secure_installation ...
 
 # Expose ports
