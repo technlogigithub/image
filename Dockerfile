@@ -31,10 +31,11 @@ RUN sed -i 's/HTTP_PORT=8080/HTTP_PORT=8484/g' /etc/default/jenkins
 
 # Install PHP extensions and LAMP stack components
 RUN docker-php-ext-install zip pdo pdo_mysql gd && \
+    apt-get update && \
     apt-get install -y \
     apache2 \
     mariadb-server \
-    php-mbstring php-xml php-mysql libapache2-mod-php7.4 && \
+    php-mbstring php-xml php-mysql libapache2-mod-php && \
     # Enable Apache modules
     a2enmod rewrite && \
     # Start Apache and MySQL services
