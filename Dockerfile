@@ -1,6 +1,8 @@
 FROM php:7.4-apache
+
 # Set the working directory in the container
 WORKDIR /var/www/html
+
 # Install system dependencies for PHP, Composer, and other tools
 RUN apt-get update && \
     apt-get install -y \
@@ -24,8 +26,9 @@ RUN apt-get update && \
     apt-get install -y openjdk-11-jre jenkins && \
     # Change Jenkins port to 8484
     sed -i 's/HTTP_PORT=8080/HTTP_PORT=8484/g' /etc/default/jenkins
-    systemctl restart jenkins
-    systemctl daemon-reload
-    systemctl restart jenkins.service
 
-    
+# Restart Jenkins during container startup
+CMD systemctl restart jenkins && \
+    systemctl daemon-reload && \
+    systemctl restart jenkins.service && \
+    apache2-foreground
