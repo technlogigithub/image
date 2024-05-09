@@ -3,7 +3,7 @@ FROM amazonlinux:latest
 # Update the system and install necessary packages
 RUN yum update -y && \
     yum install -y httpd \
-                   mysql \
+                   mysql-server \
                    php \
                    php-mysqlnd \
                    php-mbstring \
