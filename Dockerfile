@@ -1,38 +1,26 @@
-FROM centos:latest
-
-# Modify repository URLs
-RUN cd /etc/yum.repos.d/ && \
-    sed -i 's/mirrorlist/#mirrorlist/g' CentOS-* && \
-    sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' CentOS-*
-
-# Install necessary packages and Jenkins
-RUN yum update -y && \
-    yum install -y \
+FROM php:7.4-apache
+# Set the working directory in the container
+WORKDIR /var/www/html
+# Install system dependencies for PHP, Composer, and other tools
+RUN apt-get update && \
+    apt-get install -y \
+    git \
     unzip \
-    zlib \
-    libpng \
-    freetype \
-    sudo \
-    java-11-openjdk \
+    libzip-dev \
+    zlib1g-dev \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    default-mysql-client \
+    libmariadb-dev \
     wget \
-    && yum clean all && \
-    # Add Jenkins repository and key
-    wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo && \
-    rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key && \
-    # Install Jenkins
-    yum update && \
-    yum install -y jenkins && \
-    # Clean up
-    yum clean all
-
-# Modify Jenkins service to change port
-RUN sed -i 's/8080/8484/' /usr/lib/systemd/system/jenkins.service
-
-# Reload systemd manager configuration
-#RUN systemctl daemon-reload
-
-# Expose the Jenkins port
-EXPOSE 8484
-
-# Start Jenkins service
-CMD ["systemctl", "start", "jenkins"]
+    gnupg2 \
+    sudo \
+    apt-transport-https && \
+    # Add Jenkins repository and install Jenkins
+    wget -O /usr/share/keyrings/jenkins-keyring.asc https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key && \
+    echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/ | tee /etc/apt/sources.list.d/jenkins.list > /dev/null && \
+    apt-get update && \
+    apt-get install -y openjdk-11-jre jenkins && \
+    # Change Jenkins port to 8484
+    sed -i 's/HTTP_PORT=8080/HTTP_PORT=8484/g' /etc/default/jenkins
