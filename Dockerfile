@@ -8,55 +8,49 @@ RUN cd /etc/yum.repos.d/ && \
 # Install necessary packages
 RUN yum update -y && \
     yum install -y \
-    unzip \
-    zlib \
-    libpng \
-    freetype \
-    sudo \
-    && yum clean all
-
-# Install Apache HTTP Server and PHP
-RUN yum install -y httpd \
+    httpd \
+    mariadb-server \
     php \
     php-mysql \
     php-mbstring \
     php-xml \
-    php-gd \
-    php-zip \
+    wget \
     && yum clean all
 
-# Install OpenJDK 11 and Jenkins
-RUN yum install -y java-11-openjdk-devel && \
-    wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo && \
-    rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key && \
-    yum install -y jenkins && \
-    sed -i 's/JENKINS_PORT="8080"/JENKINS_PORT="8484"/g' /etc/sysconfig/jenkins && \
-    yum clean all
-
-# Set the working directory
-WORKDIR /var/www/html
-
-# Expose ports
-EXPOSE 80 8484
+# Start services
+RUN systemctl start httpd && \
+    systemctl enable httpd && \
+    systemctl start mariadb && \
+    systemctl enable mariadb
 
 # Set permissions
-RUN chown -R apache:apache /var/www/html && \
-    chmod -R 755 /var/www/html
+RUN usermod -a -G apache ec2-user && \
+    chown -R ec2-user:apache /var/www && \
+    chmod -R 2775 /var/www && \
+    find /var/www -type d -exec chmod 2775 {} \; && \
+    find /var/www -type f -exec chmod 0664 {} \;
 
-# Remove Composer (if installed globally)
-RUN yum remove -y composer
+# Copy PHP file into Apache document root
+COPY phpinfo.php /var/www/html/
 
-# Download and install Composer globally
-RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && \
-    php composer-setup.php --install-dir=/usr/local/bin --filename=composer && \
-    php -r "unlink('composer-setup.php');"
+# Remove PHP info file for security reasons
+RUN rm -f /var/www/html/phpinfo.php
 
-# Remove Composer lock file if exists
-RUN rm -f /var/www/html/composer.lock
+# Secure MariaDB (this part may need adaptation for Docker)
+# RUN mysql_secure_installation ... (adapted for Docker)
 
-# Update Composer (ignoring platform requirements)
-RUN composer update --ignore-platform-reqs --no-plugins --no-scripts --no-interaction
+# Install phpMyAdmin (this part may need adaptation for Docker)
+# RUN yum install php-mbstring php-xml -y && \
+#     systemctl restart httpd && \
+#     systemctl restart php-fpm && \
+#     cd /var/www/html && \
+#     wget https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.tar.gz && \
+#     mkdir phpMyAdmin && \
+#     tar -xvzf phpMyAdmin-latest-all-languages.tar.gz -C phpMyAdmin --strip-components 1 && \
+#     rm phpMyAdmin-latest-all-languages.tar.gz
 
-# Additional steps:
-# Start Apache
+# Expose ports
+EXPOSE 80
+
+# Command to run Apache in foreground
 CMD ["httpd", "-D", "FOREGROUND"]
