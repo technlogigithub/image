@@ -1,9 +1,6 @@
-FROM php:7.4-apache
+FROM centos:latest
 
-# Set the working directory in the container
-WORKDIR /var/www/html
-
-# Install system dependencies for PHP, Composer, and other tools
+# Install necessary packages
 RUN yum update -y && \
     yum install -y \
     git \
@@ -20,24 +17,28 @@ RUN yum update -y && \
     java-11-openjdk-devel \
     && yum clean all
 
-# Install PHP extensions and LAMP stack components
-RUN docker-php-ext-install zip pdo pdo_mysql gd && \
-    yum install -y \
-    httpd \
-    php-mbstring php-xml php-mysqlnd \
+# Install Apache HTTP Server
+RUN yum install -y httpd && \
+    systemctl enable httpd
+
+# Install PHP and necessary PHP extensions
+RUN yum install -y \
+    php \
+    php-mysql \
+    php-mbstring \
+    php-xml \
+    php-gd \
+    php-zip \
     && yum clean all
 
-# Start Apache and MySQL services
-RUN systemctl start httpd && systemctl start mariadb
+# Set the working directory
+WORKDIR /var/www/html
 
-# Enable Apache to start at boot
-RUN systemctl enable httpd
+# Expose ports
+EXPOSE 80
 
-# Configure MySQL root password
-RUN echo "mysql-server mysql-server/root_password password doncen" | debconf-set-selections && \
-    echo "mysql-server mysql-server/root_password_again password doncen" | debconf-set-selections && \
-    yum install -y mysql-server && \
-    echo -e "n\nn\nn\nn\n" | mysql_secure_installation
+# Start Apache HTTP Server
+CMD ["/usr/sbin/httpd", "-D", "FOREGROUND"]
 
 # Download Jenkins repository file and import the Jenkins key
 RUN wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo && \
@@ -71,17 +72,5 @@ RUN rm -f /var/www/html/composer.lock
 # Update Composer (ignoring platform requirements)
 RUN composer update --ignore-platform-reqs --no-plugins --no-scripts --no-interaction
 
-# Expose port 80 to the Docker host for PHP application
-EXPOSE 80
-
-# Expose port 3306 for MySQL
-EXPOSE 3306
-
 # Expose port 8080 for Jenkins web interface
 EXPOSE 8484
-
-# Switch back to the Apache user
-USER apache
-
-# Start the Apache server
-CMD ["httpd", "-DFOREGROUND"]
