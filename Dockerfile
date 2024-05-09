@@ -20,8 +20,13 @@ RUN wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
 RUN apt-get update
 
 # Install PHP extensions and LAMP stack components
-RUN docker-php-ext-install zip pdo pdo_mysql gd && \
-    apt-get install -y \
+RUN apt-get install -y \
+    libzip-dev \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    default-mysql-client \
+    libmariadb-dev \
     apache2 \
     mariadb-server \
     php7.4-cli \
@@ -87,4 +92,4 @@ EXPOSE 50000
 USER www-data
 
 # Start the Apache server
-CMD ["apache2-foreground"] 
+CMD ["apache2-foreground"]
