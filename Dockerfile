@@ -8,27 +8,15 @@ RUN cd /etc/yum.repos.d/ && \
 # Install necessary packages
 RUN yum update -y && \
     yum install -y \
-    git \
     unzip \
-    libzip \
     zlib \
     libpng \
-    libjpeg \
     freetype \
-    mariadb \
-    mariadb-server \
-    wget \
     sudo \
-    java-11-openjdk-devel \
-    --disablerepo=appstream \
     && yum clean all
-    
-# Install Apache HTTP Server
-RUN yum install -y httpd && \
-    systemctl enable httpd
 
-# Install PHP and necessary PHP extensions
-RUN yum install -y \
+# Install Apache HTTP Server and PHP
+RUN yum install -y httpd \
     php \
     php-mysql \
     php-mbstring \
@@ -37,25 +25,19 @@ RUN yum install -y \
     php-zip \
     && yum clean all
 
+# Install OpenJDK 11 and Jenkins
+RUN yum install -y java-11-openjdk-devel && \
+    wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo && \
+    rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key && \
+    yum install -y jenkins && \
+    sed -i 's/JENKINS_PORT="8080"/JENKINS_PORT="8484"/g' /etc/sysconfig/jenkins && \
+    yum clean all
+
 # Set the working directory
 WORKDIR /var/www/html
 
-# Expose port 80 for Apache
-EXPOSE 80
-
-# Download Jenkins repository file and import the Jenkins key
-RUN wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo && \
-    rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
-
-# Install phpMyAdmin
-RUN cd /var/www/html/ && \
-    wget https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.tar.gz && \
-    tar -xvzf phpMyAdmin-latest-all-languages.tar.gz && \
-    mv phpMyAdmin-* phpMyAdmin && \
-    rm phpMyAdmin-latest-all-languages.tar.gz
-
-# Change Jenkins port to 8484
-RUN sed -i 's/JENKINS_PORT="8080"/JENKINS_PORT="8484"/g' /etc/sysconfig/jenkins
+# Expose ports
+EXPOSE 80 8484
 
 # Set permissions
 RUN chown -R apache:apache /var/www/html && \
@@ -75,5 +57,6 @@ RUN rm -f /var/www/html/composer.lock
 # Update Composer (ignoring platform requirements)
 RUN composer update --ignore-platform-reqs --no-plugins --no-scripts --no-interaction
 
-# Expose port 8484 for Jenkins web interface
-EXPOSE 8484
+# Additional steps:
+# Start Apache
+CMD ["httpd", "-D", "FOREGROUND"]
