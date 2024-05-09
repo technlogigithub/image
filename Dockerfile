@@ -30,7 +30,6 @@ RUN apt-get update && \
 RUN echo "CREATE USER 'root'@'localhost' IDENTIFIED BY 'root123';" > /root/db-setup.sql && \
     echo "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' WITH GRANT OPTION;" >> /root/db-setup.sql && \
     echo "FLUSH PRIVILEGES;" >> /root/db-setup.sql && \
-    mysqld --initialize-insecure --user=mysql && \
     service mysql start && \
     mysql -u root < /root/db-setup.sql && \
     rm /root/db-setup.sql
