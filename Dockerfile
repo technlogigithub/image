@@ -25,5 +25,14 @@ RUN yum update -y && \
     # Clean up
     yum clean all
 
-# Change Jenkins port to 8484
-RUN sed -i 's/<arguments>/& --httpPort=8484/' /etc/sysconfig/jenkins
+# Modify Jenkins service to change port
+RUN sed -i 's/8080/8484/' /usr/lib/systemd/system/jenkins.service
+
+# Reload systemd manager configuration
+RUN systemctl daemon-reload
+
+# Expose the Jenkins port
+EXPOSE 8484
+
+# Start Jenkins service
+CMD ["systemctl", "start", "jenkins"]
