@@ -30,8 +30,7 @@ RUN apt-get update && \
 RUN echo "CREATE USER 'root'@'localhost' IDENTIFIED BY 'root123';" > /root/db-setup.sql && \
     echo "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' WITH GRANT OPTION;" >> /root/db-setup.sql && \
     echo "FLUSH PRIVILEGES;" >> /root/db-setup.sql && \
-    mysqld --user=mysql --initialize-insecure --skip-networking && \
-    mysqld_safe --skip-grant-tables & \
+    mysqld --user=mysql --skip-networking --socket=/var/run/mysqld/mysqld.sock & \
     sleep 5 && \
     mysql -uroot < /root/db-setup.sql && \
     rm /root/db-setup.sql
