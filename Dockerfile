@@ -22,9 +22,17 @@ RUN apt-get update && \
     wget -O /usr/share/keyrings/jenkins-keyring.asc https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key && \
     echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/ | tee /etc/apt/sources.list.d/jenkins.list > /dev/null && \
     apt-get update && \
-    apt-get install -y openjdk-11-jre jenkins && \
+    apt-get install -y openjdk-11-jre jenkins mariadb-server && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+# Set up MariaDB/MySQL root user and password
+RUN echo "CREATE USER 'root'@'localhost' IDENTIFIED BY 'root123';" > /root/db-setup.sql && \
+    echo "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' WITH GRANT OPTION;" >> /root/db-setup.sql && \
+    echo "FLUSH PRIVILEGES;" >> /root/db-setup.sql && \
+    service mysql start && \
+    mysql -u root < /root/db-setup.sql && \
+    rm /root/db-setup.sql
 
 # Install PHP extensions
 RUN docker-php-ext-install zip pdo pdo_mysql gd
@@ -60,5 +68,10 @@ EXPOSE 8484
 # Expose port 50000 for Jenkins agent connections
 EXPOSE 50000
 
+# Restart all services
+RUN service apache2 restart && \
+    service mysql restart && \
+    service jenkins restart
+
 # Start the Apache server
-CMD ["apache2-foreground"]
+CMD ["apache2-foreground"]  
