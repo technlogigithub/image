@@ -3,36 +3,31 @@ FROM php:7.4-apache
 # Set the working directory in the container
 WORKDIR /var/www/html
 
-# Install system dependencies for PHP, Composer, and other tools
-RUN apt-get update && \
-    apt-get install -y \
-    git \
-    unzip \
-    libzip-dev \
-    zlib1g-dev \
-    libpng-dev \
-    libjpeg-dev \
-    libfreetype6-dev \
-    default-mysql-client \
-    libmariadb-dev \
-    wget \
+# Update package list and install necessary dependencies
+RUN apt-get update && apt-get install -y \
     gnupg2 \
-    sudo \
-    apt-transport-https
+    software-properties-common \
+    apt-transport-https \
+    lsb-release \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
 
-# Add Jenkins repository and install Jenkins
-RUN wget -O /usr/share/keyrings/jenkins-keyring.asc https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key && \
-    echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/ | tee /etc/apt/sources.list.d/jenkins.list > /dev/null && \
-    apt-get update && \
-    apt-get install -y openjdk-11-jre jenkins && \
-    # Change Jenkins port to 8484
-    sed -i 's/HTTP_PORT=8080/HTTP_PORT=8484/g' /etc/default/jenkins
+# Add Debian repository for PHP
+RUN wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg && \
+    echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list
+
+# Update package list again
+RUN apt-get update
 
 # Install PHP extensions and LAMP stack components
 RUN docker-php-ext-install zip pdo pdo_mysql gd && \
     apt-get install -y \
     apache2 \
     mariadb-server \
+    php7.4-cli \
+    php7.4-common \
+    php7.4-json \
+    php7.4-opcache \
     libapache2-mod-php7.4
 
 # Enable Apache modules
@@ -92,4 +87,4 @@ EXPOSE 50000
 USER www-data
 
 # Start the Apache server
-CMD ["apache2-foreground"]  
+CMD ["apache2-foreground"] 
