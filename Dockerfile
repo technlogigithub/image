@@ -3,7 +3,7 @@ FROM amazonlinux:latest
 # Update the system and install necessary packages
 RUN yum update -y && \
     yum install -y httpd \
-                   mariadb-server \
+                   mariadb \
                    php \
                    php-mysqlnd \
                    php-mbstring \
