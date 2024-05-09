@@ -22,7 +22,8 @@ RUN yum update -y && \
     # Install Jenkins
     yum update && \
     yum install -y jenkins && \
-    # Change Jenkins port to 8484
-    sed -i 's/HTTP_PORT=8080/HTTP_PORT=8484/g' /etc/default/jenkins && \
     # Clean up
     yum clean all
+
+# Change Jenkins port to 8484
+RUN sed -i 's/<arguments>/& --httpPort=8484/' /etc/sysconfig/jenkins
