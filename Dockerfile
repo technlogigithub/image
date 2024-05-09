@@ -29,7 +29,7 @@ RUN yum update -y && \
 RUN sed -i 's/8080/8484/' /usr/lib/systemd/system/jenkins.service
 
 # Reload systemd manager configuration
-RUN systemctl daemon-reload
+#RUN systemctl daemon-reload
 
 # Expose the Jenkins port
 EXPOSE 8484
