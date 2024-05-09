@@ -15,6 +15,7 @@ RUN yum update -y && \
     wget \
     sudo \
     java-11-openjdk-devel \
+    --disablerepo=appstream \
     && yum clean all
 
 # Install Apache HTTP Server
