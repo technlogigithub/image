@@ -34,18 +34,12 @@ RUN yum install -y \
 # Set the working directory
 WORKDIR /var/www/html
 
-# Expose ports
+# Expose port 80 for Apache
 EXPOSE 80
-
-# Start Apache HTTP Server
-CMD ["/usr/sbin/httpd", "-D", "FOREGROUND"]
 
 # Download Jenkins repository file and import the Jenkins key
 RUN wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo && \
     rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
-
-# Change Jenkins port to 8484
-RUN sed -i 's/JENKINS_PORT="8080"/JENKINS_PORT="8484"/g' /etc/sysconfig/jenkins
 
 # Install phpMyAdmin
 RUN cd /var/www/html/ && \
@@ -53,6 +47,9 @@ RUN cd /var/www/html/ && \
     tar -xvzf phpMyAdmin-latest-all-languages.tar.gz && \
     mv phpMyAdmin-* phpMyAdmin && \
     rm phpMyAdmin-latest-all-languages.tar.gz
+
+# Change Jenkins port to 8484
+RUN sed -i 's/JENKINS_PORT="8080"/JENKINS_PORT="8484"/g' /etc/sysconfig/jenkins
 
 # Set permissions
 RUN chown -R apache:apache /var/www/html && \
@@ -72,5 +69,5 @@ RUN rm -f /var/www/html/composer.lock
 # Update Composer (ignoring platform requirements)
 RUN composer update --ignore-platform-reqs --no-plugins --no-scripts --no-interaction
 
-# Expose port 8080 for Jenkins web interface
+# Expose port 8484 for Jenkins web interface
 EXPOSE 8484
