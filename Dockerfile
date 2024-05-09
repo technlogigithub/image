@@ -1,21 +1,14 @@
-FROM centos:latest
+FROM amazonlinux:latest
 
-# Modify repository URLs
-RUN cd /etc/yum.repos.d/ && \
-    sed -i 's/mirrorlist/#mirrorlist/g' CentOS-* && \
-    sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' CentOS-*
-
-# Install necessary packages
+# Update the system and install necessary packages
 RUN yum update -y && \
-    yum install -y \
-    httpd \
-    mariadb-server \
-    php \
-    php-mysql \
-    php-mbstring \
-    php-xml \
-    wget \
-    && yum clean all
+    yum install -y httpd \
+                   mariadb-server \
+                   php \
+                   php-mysqlnd \
+                   php-mbstring \
+                   php-xml \
+                   && yum clean all
 
 # Start services
 RUN systemctl start httpd && \
@@ -23,31 +16,23 @@ RUN systemctl start httpd && \
     systemctl start mariadb && \
     systemctl enable mariadb
 
-# Set permissions
+# Set file permissions
 RUN usermod -a -G apache ec2-user && \
     chown -R ec2-user:apache /var/www && \
     chmod -R 2775 /var/www && \
     find /var/www -type d -exec chmod 2775 {} \; && \
     find /var/www -type f -exec chmod 0664 {} \;
 
-# Copy PHP file into Apache document root
+# Copy PHP info file into Apache document root
 COPY phpinfo.php /var/www/html/
 
 # Remove PHP info file for security reasons
 RUN rm -f /var/www/html/phpinfo.php
 
-# Secure MariaDB (this part may need adaptation for Docker)
-# RUN mysql_secure_installation ... (adapted for Docker)
-
-# Install phpMyAdmin (this part may need adaptation for Docker)
-# RUN yum install php-mbstring php-xml -y && \
-#     systemctl restart httpd && \
-#     systemctl restart php-fpm && \
-#     cd /var/www/html && \
-#     wget https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.tar.gz && \
-#     mkdir phpMyAdmin && \
-#     tar -xvzf phpMyAdmin-latest-all-languages.tar.gz -C phpMyAdmin --strip-components 1 && \
-#     rm phpMyAdmin-latest-all-languages.tar.gz
+# Secure MariaDB
+# Note: The following steps may not be directly applicable in a Docker environment
+# You might need to manually secure the MariaDB instance after running the container
+# RUN mysql_secure_installation ...
 
 # Expose ports
 EXPOSE 80
