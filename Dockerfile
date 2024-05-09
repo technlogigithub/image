@@ -27,8 +27,8 @@ RUN apt-get update && \
     # Change Jenkins port to 8484
     sed -i 's/HTTP_PORT=8080/HTTP_PORT=8484/g' /etc/default/jenkins
 
-# Restart Jenkins during container startup
-CMD systemctl restart jenkins && \
-    systemctl daemon-reload && \
-    systemctl restart jenkins.service && \
-    apache2-foreground
+# Expose port 80 for Apache
+EXPOSE 80
+
+# Start Apache and Jenkins during container startup
+CMD apache2-foreground && service jenkins start
