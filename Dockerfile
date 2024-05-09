@@ -24,3 +24,8 @@ RUN apt-get update && \
     apt-get install -y openjdk-11-jre jenkins && \
     # Change Jenkins port to 8484
     sed -i 's/HTTP_PORT=8080/HTTP_PORT=8484/g' /etc/default/jenkins
+    systemctl restart jenkins
+    systemctl daemon-reload
+    systemctl restart jenkins.service
+
+    
