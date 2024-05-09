@@ -14,10 +14,11 @@ RUN yum update -y && \
     freetype \
     sudo \
     java-11-openjdk \
+    wget \
     && yum clean all && \
     # Add Jenkins repository and key
-    sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo && \
-    sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key && \
+    wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo && \
+    rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key && \
     # Install Jenkins
     yum update && \
     yum install -y jenkins && \
